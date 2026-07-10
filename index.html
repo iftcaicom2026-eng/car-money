@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>クルマ購入プランナー</title>
+
+<!-- iPhone ホーム画面追加用 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="クルマ計画">
+<meta name="theme-color" content="#16293E">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#EFF2F6; --ink:#16293E; --sub:#5A6B7E; --card:#FFFFFF;
+  --line:#D7DEE7; --accent:#1D5FBF; --ok:#1A7F4B; --warn:#C77700; --bad:#C0392B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--ink);
+  padding-top:env(safe-area-inset-top)}
+.num{font-family:'IBM Plex Mono','Noto Sans JP',monospace;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+header{background:var(--ink);color:#fff;padding:20px 16px 16px}
+.wrap{max-width:560px;margin:0 auto}
+.hd-eyebrow{font-size:11px;letter-spacing:.25em;opacity:.7;font-weight:700}
+.hd-row{display:flex;align-items:baseline;gap:8px;margin-top:6px}
+.hd-monthly{font-size:44px;font-weight:700;line-height:1;background:#0C1B2C;
+  padding:4px 14px;border-radius:8px;border:1px solid #2B4160;letter-spacing:.02em}
+.hd-sub{font-size:12px;opacity:.75;margin-top:8px}
+.hd-unit{font-size:13px;opacity:.8}
+
+nav{display:flex;max-width:560px;margin:0 auto;background:var(--card);
+  border-bottom:1.5px solid var(--line);position:sticky;top:0;z-index:5}
+nav button{flex:1;padding:12px 4px;font-size:13px;font-weight:700;background:none;
+  border:none;cursor:pointer;color:var(--sub);border-bottom:3px solid transparent;
+  font-family:inherit}
+nav button.on{color:var(--accent);border-bottom-color:var(--accent)}
+nav button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+main{max-width:560px;margin:0 auto;padding:20px 16px 60px}
+.card{background:var(--card);border-radius:12px;padding:18px;border:1px solid var(--line)}
+.sect{font-size:13px;font-weight:900;letter-spacing:.12em;border-left:4px solid var(--accent);
+  padding-left:8px;margin:18px 0 14px}
+.sect:first-child{margin-top:0}
+.note{font-size:11px;color:var(--sub);margin-top:10px;line-height:1.6}
+
+.sl{margin-bottom:16px}
+.sl-top{display:flex;justify-content:space-between;margin-bottom:4px}
+.sl-label{font-size:12px;font-weight:700;color:var(--sub)}
+.sl-val{font-size:14px;font-weight:700;color:var(--accent)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+
+.fld{display:block;margin-bottom:14px}
+.fld-label{font-size:12px;font-weight:700;color:var(--sub);margin-bottom:4px;letter-spacing:.05em}
+.fld-row{display:flex;align-items:center;gap:8px}
+.fld input{flex:1;width:100%;padding:10px 12px;font-size:16px;font-weight:700;color:var(--ink);
+  background:#FBFCFE;border:1.5px solid var(--line);border-radius:8px;
+  font-family:'IBM Plex Mono','Noto Sans JP',monospace}
+.fld-unit{font-size:13px;color:var(--sub);white-space:nowrap}
+
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.preset{text-align:left;padding:10px 12px;border-radius:8px;cursor:pointer;
+  border:1.5px solid var(--line);background:#FBFCFE;font-family:inherit}
+.preset.on{border:2px solid var(--accent);background:#EAF1FB}
+.preset .p-name{font-size:13px;font-weight:900}
+.preset .p-rate{color:var(--accent);margin-left:6px}
+.preset .p-note{font-size:11px;color:var(--sub);margin-top:2px}
+
+.row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
+.row .k{font-size:13px;color:var(--sub);font-weight:700}
+.row .v{font-size:15px;font-weight:700}
+.row-note{font-size:11px;color:var(--sub);margin-top:2px}
+.row-total{display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid var(--ink)}
+.row-total .k{font-size:14px;font-weight:900}
+.row-total .v{font-size:16px;font-weight:900;color:var(--accent)}
+
+.verdict{border-radius:10px;padding:12px 14px;margin-top:8px;border:1.5px solid}
+.verdict .v-title{font-size:15px;font-weight:900}
+.verdict .v-desc{font-size:13px;margin-top:4px;line-height:1.7}
+.warnbox{margin-top:12px;background:rgba(199,119,0,.08);border:1.5px solid var(--warn);
+  border-radius:10px;padding:10px 14px;font-size:12.5px;line-height:1.7;display:none}
+
+.total-card{margin-top:16px;background:var(--ink);color:#fff;border-radius:10px;padding:14px 16px}
+.total-card .t-label{font-size:12px;opacity:.8;font-weight:700}
+.total-card .t-val{font-size:30px;font-weight:700;margin-top:4px}
+.total-card .t-sub{font-size:12px;opacity:.8;margin-top:4px}
+
+.reset-btn{margin-top:8px;padding:8px 14px;font-size:12px;font-weight:700;color:var(--sub);
+  background:#FBFCFE;border:1.5px solid var(--line);border-radius:8px;cursor:pointer;
+  font-family:inherit;display:none}
+
+.carbtn{display:block;width:100%;text-align:left;cursor:pointer;background:var(--card);
+  border:1.5px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px;font-family:inherit}
+.carbtn.on{background:#EAF1FB;border:2px solid var(--accent)}
+.carbtn .c-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.carbtn .c-name{font-size:15px;font-weight:900}
+.carbtn .c-tag{font-size:11px;font-weight:900;color:#fff;background:var(--sub);
+  border-radius:99px;padding:3px 10px;white-space:nowrap}
+.carbtn .c-tag.hot{background:var(--accent)}
+.carbtn .c-memo{font-size:12.5px;color:var(--sub);margin-top:6px;line-height:1.7}
+.carbtn .c-cost{font-size:13px;margin-top:8px;font-weight:700}
+.carbtn .c-cost .acc{color:var(--accent)}
+.carbtn .c-cost .dim{color:var(--sub);font-weight:400}
+.carbtn .c-active{font-size:11px;color:var(--accent);font-weight:700;margin-top:6px;display:none}
+.carbtn.on .c-active{display:block}
+
+.saved{text-align:center;font-size:11px;color:var(--sub);margin-top:16px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="hd-eyebrow">クルマ購入プランナー</div>
+    <div class="hd-row">
+      <span class="hd-unit">月々</span>
+      <span class="hd-monthly num" id="hd-monthly">—</span>
+      <span class="hd-unit">円</span>
+    </div>
+    <div class="hd-sub num" id="hd-sub"></div>
+  </div>
+</header>
+
+<nav>
+  <button data-tab="loan" class="on">ローン試算</button>
+  <button data-tab="budget">家計チェック</button>
+  <button data-tab="cost">総コスト</button>
+  <button data-tab="cars">候補車</button>
+</nav>
+
+<main>
+
+<!-- ローン試算 -->
+<section id="tab-loan" class="card">
+  <div class="sect">借入条件</div>
+  <div class="sl"><div class="sl-top"><span class="sl-label">車両価格（諸費用込み）</span><span class="sl-val num" id="v-price"></span></div>
+    <input type="range" id="rng-price" min="1500000" max="5000000" step="50000"></div>
+  <div class="sl"><div class="sl-top"><span class="sl-label">頭金</span><span class="sl-val num" id="v-down"></span></div>
+    <input type="range" id="rng-down" min="0" max="2000000" step="50000"></div>
+  <div class="sl"><div class="sl-top"><span class="sl-label">返済期間</span><span class="sl-val num" id="v-years"></span></div>
+    <input type="range" id="rng-years" min="1" max="8" step="1"></div>
+  <div class="sl"><div class="sl-top"><span class="sl-label">金利（年率）</span><span class="sl-val num" id="v-rate"></span></div>
+    <input type="range" id="rng-rate" min="0.5" max="10" step="0.1"></div>
+
+  <div class="fld-label" style="margin:6px 0 8px">金利プリセット（2026年6月時点の目安・要確認）</div>
+  <div class="presets" id="presets"></div>
+
+  <div class="sect" style="margin-top:20px">試算結果</div>
+  <div class="row"><span class="k">借入額</span><span class="v num" id="r-principal">—</span></div>
+  <div class="row"><span class="k">月々の返済</span><span class="v num" id="r-monthly">—</span></div>
+  <div class="row"><span class="k">総返済額</span><span class="v num" id="r-total">—</span></div>
+  <div class="row"><span class="k">利息総額</span><span class="v num" id="r-interest">—</span></div>
+  <p class="note">※ 元利均等返済・ボーナス払いなしで計算。実際の金利は審査結果により変動します。申込前に各社公式サイトで最新条件をご確認ください。</p>
+</section>
+
+<!-- 家計チェック -->
+<section id="tab-budget" class="card hidden">
+  <div class="sect">世帯の前提</div>
+  <label class="fld"><div class="fld-label">世帯手取り（月）</div>
+    <div class="fld-row"><input type="number" id="num-income" step="10000" min="0"><span class="fld-unit">円</span></div></label>
+  <label class="fld"><div class="fld-label">住宅ローン返済（月）</div>
+    <div class="fld-row"><input type="number" id="num-mortgage" step="5000" min="0"><span class="fld-unit">円</span></div></label>
+  <label class="fld"><div class="fld-label">その他の固定費（月）</div>
+    <div class="fld-row"><input type="number" id="num-other" step="5000" min="0"><span class="fld-unit">円</span></div></label>
+  <p class="note" style="margin-top:-6px;margin-bottom:10px">保険・通信費・光熱費・教育費・サブスク・積立など、毎月固定でかかる金額の合計。</p>
+
+  <div style="text-align:center;margin-top:8px">
+    <div class="fld-label" style="margin-bottom:4px">合計返済比率（住宅＋クルマ ÷ 世帯手取り）</div>
+    <svg viewBox="0 0 200 120" style="width:100%;max-width:260px">
+      <path d="M 20 100 A 80 80 0 0 1 116 22" fill="none" stroke="var(--ok)" stroke-width="14" stroke-linecap="round" opacity=".85"/>
+      <path d="M 116 22 A 80 80 0 0 1 146 36" fill="none" stroke="var(--warn)" stroke-width="14" opacity=".85"/>
+      <path d="M 146 36 A 80 80 0 0 1 180 100" fill="none" stroke="var(--bad)" stroke-width="14" stroke-linecap="round" opacity=".85"/>
+      <g id="needle" style="transition:transform .5s ease;transform-origin:100px 100px">
+        <line x1="100" y1="100" x2="100" y2="32" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>
+      </g>
+      <circle cx="100" cy="100" r="7" fill="var(--ink)"/>
+      <text x="20" y="116" font-size="11" fill="var(--sub)">0%</text>
+      <text x="92" y="14" font-size="11" fill="var(--sub)">25%</text>
+      <text x="166" y="116" font-size="11" fill="var(--sub)">50%</text>
+      <text id="g-ratio" x="100" y="78" font-size="20" font-weight="700" text-anchor="middle" class="num">—</text>
+    </svg>
+  </div>
+
+  <div class="verdict" id="verdict">
+    <div class="v-title" id="v-title"></div>
+    <div class="v-desc" id="v-desc"></div>
+  </div>
+
+  <div style="margin-top:16px">
+    <div class="row" style="display:block;padding:10px 0">
+      <div style="display:flex;justify-content:space-between"><span class="k">クルマ単体の返済比率</span><span class="v num" id="b-ratioCar">—</span></div>
+      <div class="row-note">目安：15〜20%以内</div></div>
+    <div class="row" style="display:block;padding:10px 0">
+      <div style="display:flex;justify-content:space-between"><span class="k">ローン返済合計（月）</span><span class="v num" id="b-loanSum">—</span></div>
+      <div class="row-note">住宅＋クルマ</div></div>
+    <div class="row" style="display:block;padding:10px 0">
+      <div style="display:flex;justify-content:space-between"><span class="k">固定支出の合計（月）</span><span class="v num" id="b-fixedSum">—</span></div>
+      <div class="row-note">ローン＋その他固定費</div></div>
+    <div class="row" style="display:block;padding:10px 0">
+      <div style="display:flex;justify-content:space-between"><span class="k">自由に使える金額（月）</span><span class="v num" id="b-left">—</span></div>
+      <div class="row-note">食費・日用品・レジャー・予備費の原資</div></div>
+  </div>
+  <div class="warnbox" id="leftwarn">固定費を引いた残りが月10万円を下回っています。変動費や急な出費を考えると、頭金・期間・その他固定費の見直しを検討する余地があります。</div>
+</section>
+
+<!-- 総コスト -->
+<section id="tab-cost" class="card hidden">
+  <div class="sect">走り方の前提</div>
+  <div class="sl"><div class="sl-top"><span class="sl-label">年間走行距離</span><span class="sl-val num" id="v-km"></span></div>
+    <input type="range" id="rng-km" min="3000" max="20000" step="500"></div>
+  <div class="sl"><div class="sl-top"><span class="sl-label">ガソリン価格</span><span class="sl-val num" id="v-fp"></span></div>
+    <input type="range" id="rng-fp" min="140" max="220" step="1"></div>
+  <div class="sl"><div class="sl-top"><span class="sl-label">保有予定年数</span><span class="sl-val num" id="v-own"></span></div>
+    <input type="range" id="rng-own" min="3" max="12" step="1"></div>
+
+  <div class="sect">年間維持費（<span id="cost-carname"></span>）</div>
+  <p class="note" style="margin-top:0;margin-bottom:10px">金額は直接編集できます。実際の見積り額が分かったらここに入力してください。</p>
+  <label class="fld"><div class="fld-label">自動車税（年）</div>
+    <div class="fld-row"><input type="number" id="ov-tax" step="1000" min="0"><span class="fld-unit">円</span></div></label>
+  <label class="fld"><div class="fld-label">車検・法定費用（年割）</div>
+    <div class="fld-row"><input type="number" id="ov-inspection" step="1000" min="0"><span class="fld-unit">円</span></div></label>
+  <label class="fld"><div class="fld-label">任意保険（年）</div>
+    <div class="fld-row"><input type="number" id="ov-insurance" step="1000" min="0"><span class="fld-unit">円</span></div></label>
+  <label class="fld"><div class="fld-label">メンテ・タイヤ等（年）</div>
+    <div class="fld-row"><input type="number" id="ov-maint" step="1000" min="0"><span class="fld-unit">円</span></div></label>
+  <label class="fld"><div class="fld-label">実燃費</div>
+    <div class="fld-row"><input type="number" id="ov-fuelEff" step="0.5" min="5"><span class="fld-unit">km/L</span></div></label>
+
+  <div class="row"><span class="k">燃料費（自動計算）</span><span class="v num" id="c-fuel">—</span></div>
+  <div class="row-total"><span class="k">維持費 合計／年</span><span class="v num" id="c-maint">—</span></div>
+  <button class="reset-btn" id="btn-reset">この車の維持費を目安値に戻す</button>
+
+  <div class="total-card">
+    <div class="t-label" id="t-label">総コスト（頭金＋返済＋維持費）</div>
+    <div class="t-val num" id="t-val">—</div>
+    <div class="t-sub num" id="t-sub"></div>
+  </div>
+  <p class="note">※ 維持費は一般的な目安値です。保険料は等級・年齢条件で大きく変わるため、見積りで要確認。駐車場代は自宅保有のため含めていません。</p>
+</section>
+
+<!-- 候補車 -->
+<section id="tab-cars" class="hidden">
+  <div id="carlist"></div>
+  <p class="note">※ 燃費・税額は年式・グレードにより異なります（目安・要確認）。タップすると「総コスト」タブの計算対象が切り替わります。</p>
+</section>
+
+<div class="saved" id="saved"></div>
+</main>
+
+<script>
+"use strict";
+
+// ============ データ ============
+const RATE_PRESETS = [
+  { label: "ろうきん", rate: 1.7, note: "勤務先の会員資格があれば最有力" },
+  { label: "千葉銀行", rate: 2.4, note: "地銀。取引口座があれば優遇の可能性" },
+  { label: "ネット銀行", rate: 2.9, note: "楽天・イオン・au等。Web完結" },
+  { label: "ディーラー", rate: 7.5, note: "審査は速いが金利は高め" },
+];
+
+const CARS = [
+  { id:"voxyG", name:"ヴォクシー R80 ガソリン ZS煌III（2021年式）", tag:"本命",
+    tax:36000, fuelEff:12.5, inspection:55000, insurance:65000, maint:35000,
+    memo:"80系最終型。年式が新しく経年劣化リスクが小さい。8年保有前提なら有力。" },
+  { id:"voxy", name:"ヴォクシー R80 ZS煌II HV", tag:"対抗",
+    tax:36000, fuelEff:19.0, inspection:55000, insurance:65000, maint:35000,
+    memo:"燃費◎で維持費が軽い。ただし年式が古めの個体が多く、駆動用バッテリーの経年に注意。" },
+  { id:"noah", name:"ノア R80 Si HV", tag:"比較用",
+    tax:36000, fuelEff:19.0, inspection:55000, insurance:65000, maint:35000,
+    memo:"中身はヴォクシーと兄弟車。相場が安ければこちらもアリ。" },
+  { id:"freed", name:"フリード GB7 HV", tag:"コンパクト",
+    tax:30500, fuelEff:19.5, inspection:50000, insurance:60000, maint:30000,
+    memo:"一回り小さく税金も安い。3列目の広さは要実車確認。" },
+];
+
+const DEFAULTS = {
+  price: 3000000, down: 1000000, rate: 1.7, years: 5,
+  income: 450000, mortgage: 100000, otherExp: 100000,
+  km: 8000, fuelPrice: 175, ownYears: 8,
+  carId: "voxyG", overrides: {},
+};
+
+const KEY = "car-planner-v1";
+let S = { ...DEFAULTS };
+try {
+  const raw = localStorage.getItem(KEY);
+  if (raw) S = { ...DEFAULTS, ...JSON.parse(raw) };
+} catch (e) { /* プライベートブラウズ等では保存なしで動作 */ }
+
+// ============ ユーティリティ ============
+const $ = (id) => document.getElementById(id);
+const yen = (n) => isFinite(n) ? Math.round(n).toLocaleString("ja-JP") : "—";
+const man = (n) => isFinite(n) ? (n / 10000).toFixed(1) : "—";
+
+function monthlyPayment(p, ratePct, years) {
+  if (p <= 0 || years <= 0) return 0;
+  const n = years * 12, r = ratePct / 100 / 12;
+  if (r === 0) return p / n;
+  return (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+}
+
+let saveTimer = null;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(S));
+      $("saved").textContent = "入力内容を自動保存しています（" +
+        new Date().toLocaleTimeString("ja-JP") + " 保存）";
+    } catch (e) { /* 保存不可環境ではスキップ */ }
+  }, 500);
+}
+
+function effCar() {
+  const car = CARS.find((c) => c.id === S.carId) || CARS[0];
+  return { ...car, ...(S.overrides[S.carId] || {}) };
+}
+
+// ============ 再計算・描画 ============
+function recalc() {
+  const principal = Math.max(S.price - S.down, 0);
+  const monthly = monthlyPayment(principal, S.rate, S.years);
+  const total = monthly * S.years * 12;
+  const interest = total - principal;
+  const eff = effCar();
+  const fuelYear = (S.km / eff.fuelEff) * S.fuelPrice;
+  const maintYear = eff.tax + eff.inspection + eff.insurance + eff.maint + fuelYear;
+  const ratioCar = monthly / S.income;
+  const ratioAll = (monthly + S.mortgage) / S.income;
+  const leftover = S.income - monthly - S.mortgage - S.otherExp;
+  const totalOwn = S.down + total + maintYear * S.ownYears;
+
+  // ヘッダー
+  $("hd-monthly").textContent = yen(monthly);
+  $("hd-sub").textContent = "借入 " + man(principal) + "万円 ／ 金利 " + S.rate +
+    "% ／ " + S.years + "年 ／ 利息総額 " + man(interest) + "万円";
+
+  // スライダー表示
+  $("v-price").textContent = man(S.price) + "万円";
+  $("v-down").textContent = man(S.down) + "万円";
+  $("v-years").textContent = S.years + "年";
+  $("v-rate").textContent = S.rate.toFixed(1) + "%";
+  $("v-km").textContent = S.km.toLocaleString() + " km";
+  $("v-fp").textContent = S.fuelPrice + " 円/L";
+  $("v-own").textContent = S.ownYears + "年";
+
+  // ローン結果
+  $("r-principal").textContent = yen(principal) + " 円";
+  $("r-monthly").textContent = yen(monthly) + " 円";
+  $("r-total").textContent = yen(total) + " 円";
+  $("r-interest").textContent = yen(interest) + " 円";
+
+  // プリセットの選択状態
+  document.querySelectorAll(".preset").forEach((b) => {
+    b.classList.toggle("on", Number(b.dataset.rate) === S.rate);
+  });
+
+  // 家計チェック
+  const clamped = Math.max(0, Math.min(ratioAll, 0.5));
+  $("needle").style.transform = "rotate(" + (-90 + (clamped / 0.5) * 180) + "deg)";
+  const gcolor = ratioAll < 0.3 ? "var(--ok)" : ratioAll < 0.35 ? "var(--warn)" : "var(--bad)";
+  const gt = $("g-ratio");
+  gt.textContent = (ratioAll * 100).toFixed(1) + "%";
+  gt.setAttribute("fill", gcolor);
+
+  const v = ratioAll < 0.3
+    ? { c:"var(--ok)", t:"無理のない範囲", d:"住宅ローンと合わせても世帯手取りの30%未満。教育費の増加にも備えやすい水準です。" }
+    : ratioAll < 0.35
+    ? { c:"var(--warn)", t:"ややきつめ", d:"合計返済が30〜35%。頭金を増やすか期間を見直すと安心です。" }
+    : { c:"var(--bad)", t:"要再検討", d:"合計返済が35%超。予算減・頭金増・期間延長のいずれかを検討推奨。" };
+  const vb = $("verdict");
+  vb.style.borderColor = v.c;
+  vb.style.background = "color-mix(in srgb, " + v.c + " 8%, white)";
+  $("v-title").textContent = v.t;
+  $("v-title").style.color = v.c;
+  $("v-desc").textContent = v.d;
+
+  $("b-ratioCar").textContent = (ratioCar * 100).toFixed(1) + "%";
+  $("b-loanSum").textContent = yen(monthly + S.mortgage) + " 円";
+  $("b-fixedSum").textContent = yen(monthly + S.mortgage + S.otherExp) + " 円";
+  $("b-left").textContent = yen(leftover) + " 円";
+  $("leftwarn").style.display = leftover < 100000 ? "block" : "none";
+
+  // 総コスト
+  $("cost-carname").textContent = eff.name;
+  $("c-fuel").textContent = yen(fuelYear) + " 円";
+  $("c-maint").textContent = yen(maintYear) + " 円";
+  $("t-label").textContent = S.ownYears + "年間の総コスト（頭金＋返済＋維持費）";
+  $("t-val").innerHTML = man(totalOwn) + '<span style="font-size:14px"> 万円</span>';
+  $("t-sub").textContent = "＝ 月あたり約 " + yen(totalOwn / (S.ownYears * 12)) + " 円";
+  const hasOv = S.overrides[S.carId] && Object.keys(S.overrides[S.carId]).length > 0;
+  $("btn-reset").style.display = hasOv ? "inline-block" : "none";
+
+  // 候補車カード
+  renderCars();
+}
+
+function syncOverrideInputs() {
+  const eff = effCar();
+  ["tax","inspection","insurance","maint","fuelEff"].forEach((k) => {
+    $("ov-" + k).value = eff[k];
+  });
+}
+
+function renderCars() {
+  const box = $("carlist");
+  box.innerHTML = "";
+  CARS.forEach((c) => {
+    const e = { ...c, ...(S.overrides[c.id] || {}) };
+    const fuel = (S.km / e.fuelEff) * S.fuelPrice;
+    const maint = e.tax + e.inspection + e.insurance + e.maint + fuel;
+    const btn = document.createElement("button");
+    btn.className = "carbtn" + (S.carId === c.id ? " on" : "");
+    btn.innerHTML =
+      '<div class="c-head"><span class="c-name"></span>' +
+      '<span class="c-tag' + (c.tag === "本命" ? " hot" : "") + '"></span></div>' +
+      '<div class="c-memo"></div>' +
+      '<div class="c-cost num">維持費目安 <span class="acc">' + man(maint) + '万円/年</span>' +
+      ' <span class="dim">（燃料 ' + man(fuel) + '万円含む）</span></div>' +
+      '<div class="c-active">✓ 総コスト計算に使用中</div>';
+    btn.querySelector(".c-name").textContent = c.name;
+    btn.querySelector(".c-tag").textContent = c.tag;
+    btn.querySelector(".c-memo").textContent = c.memo;
+    btn.addEventListener("click", () => {
+      S.carId = c.id;
+      syncOverrideInputs();
+      recalc(); save();
+    });
+    box.appendChild(btn);
+  });
+}
+
+// ============ 入力バインド ============
+function bindRange(id, key, isFloat) {
+  const el = $("rng-" + id);
+  el.value = S[key];
+  el.addEventListener("input", () => {
+    S[key] = isFloat ? parseFloat(el.value) : Number(el.value);
+    recalc(); save();
+  });
+}
+function bindNumber(id, key) {
+  const el = $("num-" + id);
+  el.value = S[key];
+  el.addEventListener("input", () => {
+    S[key] = Number(el.value) || 0;
+    recalc(); save();
+  });
+}
+function bindOverride(k) {
+  $("ov-" + k).addEventListener("input", (ev) => {
+    const val = Number(ev.target.value);
+    if (!isFinite(val)) return;
+    if (!S.overrides[S.carId]) S.overrides[S.carId] = {};
+    S.overrides[S.carId][k] = val;
+    recalc(); save();
+  });
+}
+
+bindRange("price", "price");
+bindRange("down", "down");
+bindRange("years", "years");
+bindRange("rate", "rate", true);
+bindRange("km", "km");
+bindRange("fp", "fuelPrice");
+bindRange("own", "ownYears");
+bindNumber("income", "income");
+bindNumber("mortgage", "mortgage");
+bindNumber("other", "otherExp");
+["tax","inspection","insurance","maint","fuelEff"].forEach(bindOverride);
+
+$("btn-reset").addEventListener("click", () => {
+  delete S.overrides[S.carId];
+  syncOverrideInputs();
+  recalc(); save();
+});
+
+// プリセットボタン生成
+RATE_PRESETS.forEach((p) => {
+  const b = document.createElement("button");
+  b.className = "preset";
+  b.dataset.rate = p.rate;
+  b.innerHTML = '<div class="p-name"></div><div class="p-note"></div>';
+  b.querySelector(".p-name").innerHTML =
+    '<span class="pn"></span><span class="p-rate num">' + p.rate + '%</span>';
+  b.querySelector(".pn").textContent = p.label;
+  b.querySelector(".p-note").textContent = p.note;
+  b.addEventListener("click", () => {
+    S.rate = p.rate;
+    $("rng-rate").value = p.rate;
+    recalc(); save();
+  });
+  $("presets").appendChild(b);
+});
+
+// タブ切り替え
+document.querySelectorAll("nav button").forEach((b) => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("nav button").forEach((x) => x.classList.remove("on"));
+    b.classList.add("on");
+    ["loan","budget","cost","cars"].forEach((t) => {
+      $("tab-" + t).classList.toggle("hidden", t !== b.dataset.tab);
+    });
+  });
+});
+
+// 初期描画
+syncOverrideInputs();
+recalc();
+</script>
+</body>
+</html>
